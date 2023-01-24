@@ -222,7 +222,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                               Navigator.of(context).pushNamed(HomeScreen.tag);
                             });
                           }).catchError((onError) {
-                            processError(onError);
+                            print(onError);
                           });
                         }
                       },
