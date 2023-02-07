@@ -1,8 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/src/widgets/container.dart';
-import 'package:flutter/src/widgets/framework.dart';
-
-import '../const/color.dart';
 
 class BackgroundScreen extends StatelessWidget {
   const BackgroundScreen({super.key});

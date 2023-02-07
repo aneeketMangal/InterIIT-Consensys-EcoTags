@@ -2,17 +2,24 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:camera/camera.dart';
+import 'package:ecotags/const/color.dart';
+import 'package:ecotags/providers/camera/CameraProvider.dart';
+import 'package:ecotags/screens/loading.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+import '../../services/UploadImage.dart';
 
 // A screen that allows users to take a picture using a given camera.
 class CameraWidget extends StatefulWidget {
   static String tag = '/camera';
   const CameraWidget({
     super.key,
-    required this.camera,
+    // required this.camera,
   });
 
-  final CameraDescription camera;
+  // final CameraDescription camera;
 
   @override
   CameraWidgetState createState() => CameraWidgetState();
@@ -20,18 +27,21 @@ class CameraWidget extends StatefulWidget {
 
 class CameraWidgetState extends State<CameraWidget> {
   late CameraController _controller;
-  late Future<void> _initializeControllerFuture;
+  Future<void>? _initializeControllerFuture;
 
   @override
   void initState() {
     super.initState();
-    // To display the current output from the Camera,
-    // create a CameraController.
+    CameraDescription camera =
+        Provider.of<CameraProvider>(context, listen: false).getCamera();
+
+    print('Camera is initialized');
+    print(camera);
     _controller = CameraController(
       // Get a specific camera from the list of available cameras.
-      widget.camera,
+      camera,
       // Define the resolution to use.
-      ResolutionPreset.max,
+      ResolutionPreset.high,
     );
 
     // Next, initialize the controller. This returns a Future.
@@ -68,7 +78,7 @@ class CameraWidgetState extends State<CameraWidget> {
             );
           } else {
             // Otherwise, display a loading indicator.
-            return const Center(child: CircularProgressIndicator());
+            return LoadingWidget(message: "Camera is loading...");
           }
         },
       ),
@@ -87,17 +97,21 @@ class CameraWidgetState extends State<CameraWidget> {
               // Attempt to take a picture and get the file `image`
               // where it was saved.
               final image = await _controller.takePicture();
+              // send this to firestore
+              // await Provider.of<CameraProvider>(context, listen: false).uploadImage(image.path);
 
               if (!mounted) return;
+
+              // upload
+              // await uploadImage(image);
 
               // If the picture was taken, display it on a new screen.
               await Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) => DisplayPictureScreen(
-                    // Pass the automatically generated path to
-                    // the DisplayPictureScreen widget.
-                    imagePath: image.path,
-                  ),
+                      // Pass the automatically generated path to
+                      // the DisplayPictureScreen widget.
+                      image: image),
                 ),
               );
             } catch (e) {
@@ -118,18 +132,48 @@ class CameraWidgetState extends State<CameraWidget> {
 }
 
 // A widget that displays the picture taken by the user.
-class DisplayPictureScreen extends StatelessWidget {
-  final String imagePath;
+class DisplayPictureScreen extends StatefulWidget {
+  final XFile image;
+  const DisplayPictureScreen({super.key, required this.image});
 
-  const DisplayPictureScreen({super.key, required this.imagePath});
+  @override
+  State<DisplayPictureScreen> createState() => _DisplayPictureScreenState();
+}
+
+class _DisplayPictureScreenState extends State<DisplayPictureScreen> {
+  bool isUploading = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Display the Picture')),
-      // The image is stored as a file on the device. Use the `Image.file`
-      // constructor with the given path to display the image.
-      body: Image.file(File(imagePath)),
-    );
+        // appBar: AppBar(title: const Text('Display the Picture')),
+        body: Container(
+            color: backgroundColor,
+            width: double.infinity,
+            height: double.infinity,
+            child: Image.file(File(widget.image.path))),
+        floatingActionButton: FloatingActionButton.extended(
+          isExtended: true,
+          backgroundColor: primaryColor,
+          onPressed: () async {
+            setState(() {
+              isUploading = true;
+            });
+            await uploadImage(widget.image);
+            //show toast
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('Image Uploaded successfully!'),
+              duration: Duration(seconds: 2),
+            ));
+            Navigator.of(context).pop();
+          },
+          label: Text(isUploading ? "Uploading" : "Upload Image",
+              style: TextStyle(color: appColor)),
+          icon: isUploading
+              ? CircularProgressIndicator(
+                  color: appColor,
+                )
+              : Icon(CupertinoIcons.cloud_upload, color: appColor),
+        ));
   }
 }

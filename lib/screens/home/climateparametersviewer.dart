@@ -16,7 +16,7 @@ class ClimateParametersViewer extends StatelessWidget {
       height: 45,
       padding: const EdgeInsets.all(1),
       decoration: BoxDecoration(
-          color: Colors.white, borderRadius: BorderRadius.circular(10)),
+          color: Colors.black, borderRadius: BorderRadius.circular(10)),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: <Widget>[
@@ -24,14 +24,14 @@ class ClimateParametersViewer extends StatelessWidget {
             aqi.toString() + 'AQI',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.black,
+              color: Colors.white,
             ),
           ),
           Text(
             temperature.toString() + '°C',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.black,
+              color: Colors.white,
             ),
           ),
         ],

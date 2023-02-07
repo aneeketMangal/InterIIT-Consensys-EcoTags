@@ -1,13 +1,19 @@
 import 'package:camera/camera.dart';
-import 'package:ecotags/screens/camera.dart';
+import 'package:ecotags/providers/user/UserDetailsProvider.dart';
+import 'package:ecotags/screens/camera/camera.dart';
+import 'package:ecotags/screens/loading.dart';
 import 'package:ecotags/screens/map/hamburger.dart';
 import 'package:ecotags/screens/map/map.dart';
 import 'package:ecotags/screens/map/maputils.dart';
+import 'package:ecotags/screens/profile/Profile.dart';
+import 'package:ecotags/services/ApiServices.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
+import 'package:provider/provider.dart';
 
 import 'bottomnav.dart';
 import 'home/climateparametersviewer.dart';
@@ -15,10 +21,10 @@ import 'home/pointsviewer.dart';
 
 class HomeScreen extends StatefulWidget {
   static String tag = 'login-page';
-  final CameraDescription camera;
+  // final CameraDescription camera;
   const HomeScreen({
     super.key,
-    required this.camera,
+    // required this.camera,
   });
   @override
   _HomeScreenState createState() => new _HomeScreenState();
@@ -27,6 +33,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final GlobalKey<ScaffoldState> _scaffoldState = GlobalKey<ScaffoldState>();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  bool isLoading = true;
   int _currIndex = 2;
   String _name = 'World';
   List<MapObject> _mapObjects = [
@@ -52,8 +59,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
+    _getUserDetails().then((value) => setState(() {
+          // set in Provider
+          Provider.of<UserDetailsProvider>(context, listen: false)
+              .setUserDetails(value);
+
+          isLoading = false;
+        }));
     // _getName();
-    _getMapObjects();
+    // _getMapObjects();
   }
 
   @override
@@ -70,14 +84,16 @@ class _HomeScreenState extends State<HomeScreen> {
           },
         ),
         body: Stack(children: <Widget>[
-          if (_currIndex == 0) ...[
+          if (isLoading == 0) ...[
+            LoadingWidget(message: "Loading Ecotags...")
+          ] else if (_currIndex == 0) ...[
             Center(child: Text('Search'))
           ] else if (_currIndex == 1) ...[
-            CameraWidget(camera: widget.camera)
+            CameraWidget()
           ] else if (_currIndex == 2) ...[
-            MapWidget(mapObjects: _mapObjects)
+            MapWidget()
           ] else if (_currIndex == 3) ...[
-            Center(child: Text('Profile'))
+            Profile()
           ],
           if (_currIndex == 2) ...[
             Positioned(
@@ -94,7 +110,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                   child: IconButton(
                       iconSize: 30,
-                      icon: const Icon(Icons.menu),
+                      icon: const Icon(CupertinoIcons.list_dash),
                       // onPressed: () => Scaffold.of(context).openDrawer()),
                       onPressed: () =>
                           _scaffoldState.currentState!.openDrawer()),
@@ -103,65 +119,15 @@ class _HomeScreenState extends State<HomeScreen> {
             Positioned(
                 bottom: 10,
                 left: 10,
-                child: ClimateParametersViewer(aqi: 118, temperature: 36))
+                child: ClimateParametersViewer(aqi: 118, temperature: 16))
           ]
         ]));
   }
 
-  void _getMapObjects() async {
-    Position currUserLocation = await _getCurrPosition();
-
-    setState(() {
-      _mapObjects = [
-        MapObject(
-          id: '1',
-          mapObjectType: MapObjectTypes.currUserPosition,
-          latitude: currUserLocation.latitude,
-          longitude: currUserLocation.longitude,
-          title: 'Test',
-          details: 'Test',
-        ),
-      ];
-    });
-  }
-
-  Future<Position> _getCurrPosition() async {
-    // get current position
-    // add to mapObjects
-    await Geolocator.requestPermission()
-        .then((value) {})
-        .onError((error, stackTrace) async {
-      await Geolocator.requestPermission();
-      print("ERROR" + error.toString());
-    });
-    return await Geolocator.getCurrentPosition();
-  }
-
-  void _getName() {
-    if (!mounted) {
-      return;
-    }
-    User? user = _firebaseAuth.currentUser;
-    if (user == null) {
-      Navigator.popUntil(context, (Route<dynamic> route) => route.isFirst);
-      return;
-    } else {
-      print(user);
-    }
-
-    // FirebaseFirestore.instance
-    //     .collection('users')
-    //     .doc(user.uid)
-    //     .snapshots()
-    //     .listen((userData) {
-    //   if (userData.data()!.containsKey('firstName') &&
-    //       userData.data()!.containsKey('lastName')) {
-    //     setState(() {
-    //       _name = userData.data()!['firstName'] +
-    //           ' ' +
-    //           userData.data()!['lastName'];
-    //     });
-    //   }
-    // });
+  Future<Object> _getUserDetails() async {
+    // make a getApiCall to get user details
+    // return the user details
+    ApiResponse response = await getApiCall("getUser");
+    return response.data;
   }
 }

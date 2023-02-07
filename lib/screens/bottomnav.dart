@@ -1,4 +1,6 @@
+import 'package:ecotags/const/color.dart';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 
@@ -24,19 +26,19 @@ class CustomNavButton extends GButton {
 
 List<CustomNavButton> bottomNavItems = [
   CustomNavButton(
-    icon: Icons.search,
+    icon: CupertinoIcons.search,
     text: 'Search',
   ),
   CustomNavButton(
-    icon: Icons.camera,
+    icon: CupertinoIcons.camera,
     text: 'Camera',
   ),
   CustomNavButton(
-    icon: Icons.home,
+    icon: CupertinoIcons.home,
     text: 'Home',
   ),
   CustomNavButton(
-    icon: Icons.person,
+    icon: CupertinoIcons.person,
     text: 'Profile',
   ),
 ];
@@ -44,7 +46,7 @@ List<CustomNavButton> bottomNavItems = [
 Widget buildBottomNav(void Function(int) onTabChanged) {
   return GNav(
       gap: 4,
-      backgroundColor: Colors.black,
+      backgroundColor: appColor,
       activeColor: Colors.white,
       iconSize: 25,
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
